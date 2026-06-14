@@ -21,4 +21,4 @@ an IoT-based fire early warning system using the ESP32 DevKit V1 to detect poten
 - OneWire
 -DallasTemperature
 ## System Workflow
-![System Workflow](images/EWS KEBAKARAN.drawio.png)
+![System Workflow](images/EWSKEBAKARAN.drawio.png)
