@@ -1,1 +1,150 @@
-EWS_KEBAKARAN.ino
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// ===== PIN SETTING =====
+#define ONE_WIRE_BUS 16
+#define MQ2 34
+#define FLAME_SENSOR 32
+#define BUZZER 26
+#define LED 27
+
+// ===== WIFI =====
+const char* ssid = "itel RS4";
+const char* password = "akbarjogja";
+
+// ===== TELEGRAM =====
+#define BOTtoken "8706778465:AAG8HTZmXVNYo-bqbycsnNo-qys17AqYVBs"
+#define CHAT_ID "-1003962253042"
+
+// ===== OBJECT =====
+WiFiClientSecure client;
+UniversalTelegramBot bot(BOTtoken, client);
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// ===== THRESHOLD =====
+int smokeThreshold = 600;
+int tempThreshold = 50;
+int flameThreshold = 1000;
+
+void setup() {
+
+  Serial.begin(115200);
+
+  pinMode(BUZZER, OUTPUT);
+  pinMode(LED, OUTPUT);
+
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0,0);
+  lcd.print("Fire Warning");
+  lcd.setCursor(0,1);
+  lcd.print("System Start");
+  delay(2000);
+  lcd.clear();
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.println("Connecting WiFi...");
+  }
+
+  Serial.println("WiFi Connected");
+
+  lcd.setCursor(0,0);
+  lcd.print("WiFi Connected");
+  delay(2000);
+  lcd.clear();
+
+  client.setInsecure();
+
+  sensors.begin();
+  
+  // Kirim pesan test saat boot
+  bot.sendMessage(CHAT_ID, "🔥 Sistem Monitoring Kebakaran Aktif 🔥", "");
+}
+
+void loop() {
+
+  sensors.requestTemperatures();
+  float temp = sensors.getTempCByIndex(0);
+
+  int smoke = analogRead(MQ2);
+  int flame = analogRead(FLAME_SENSOR);
+
+  // Cetak ke Serial Monitor untuk debugging
+  Serial.println("========== DATA SENSOR ==========");
+  Serial.print("Suhu: "); Serial.print(temp, 1); Serial.println(" C");
+  Serial.print("Asap: "); Serial.print(smoke); Serial.println(" PPM");
+  Serial.print("Api: "); Serial.println(flame);
+  Serial.println("=================================");
+
+  if (temp > tempThreshold || smoke > smokeThreshold || flame < flameThreshold) {
+
+    digitalWrite(BUZZER, HIGH);
+    digitalWrite(LED, HIGH);
+
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("!!! FIRE !!!");
+    lcd.setCursor(0,1);
+    lcd.print("CHECK HOUSE");
+
+    String message = "🚨 PERINGATAN KEBAKARAN 🚨\n";
+    message += "Suhu: " + String(temp, 1) + " C\n";
+    message += "Asap: " + String(smoke) + " PPM\n";  // PASTIKAN " PPM"
+    
+    if (flame < 1000) {
+      message += "Api: ADA API\n";
+    } else {
+      message += "Api: TIDAK ADA API\n";
+    }
+
+    // Cetak pesan ke Serial Monitor sebelum kirim
+    Serial.println("Mengirim pesan ke Telegram:");
+    Serial.println(message);
+    
+    bot.sendMessage(CHAT_ID, message, "");
+    
+    // Tambah delay agar pesan terkirim sempurna
+    delay(2000);
+
+    delay(10000);
+  }
+
+  else {
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(LED, LOW);
+
+    lcd.clear();
+    
+    lcd.setCursor(0,0);
+    lcd.print("T:");
+    lcd.print(temp, 1);
+    lcd.print("C ");
+    
+    lcd.setCursor(8,0);
+    lcd.print("S:");
+    lcd.print(smoke);
+    lcd.print("PPM");
+    
+    lcd.setCursor(0,1);
+    if (flame < 1000) {
+      lcd.print("ADA API   ");
+    } else {
+      lcd.print("TIDAK ADA API");
+    }
+  }
+
+  delay(2000);
+}
