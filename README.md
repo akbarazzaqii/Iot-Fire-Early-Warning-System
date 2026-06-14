@@ -19,6 +19,4 @@ an IoT-based fire early warning system using the ESP32 DevKit V1 to detect poten
 - Telegram Bot
 - WiFi
 - OneWire
--DallasTemperature
-## System Workflow
-![System Workflow](images/EWS_KEBAKARAN.drawio.png)
+-DallasTemperature  
