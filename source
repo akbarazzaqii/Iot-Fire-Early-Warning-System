@@ -14,8 +14,8 @@
 #define LED 27
 
 // ===== WIFI =====
-const char* ssid = "itel RS4";
-const char* password = "akbarjogja";
+const char* ssid = "";
+const char* password = "";
 
 // ===== TELEGRAM =====
 #define BOTtoken "8706778465:AAG8HTZmXVNYo-bqbycsnNo-qys17AqYVBs"
